@@ -101,34 +101,44 @@ To submit your homework:
 from bs4 import BeautifulSoup
 import requests
 
-def meme_it(fact):
+def meme_it(image, text):
+  if image == 'buzz':
     url = 'http://cdn.meme.am/Instance/Preview'
     params = {
         'imageID': 2097248,
-        'text1': fact
+        'text1': text,
     }
-
     response = requests.get(url, params)
+  elif image == 'aliens':
+    pass
+  else:
+    pass
+  return response.content
 
-    return response.content
 
-
-def parse_fact(body):
-    parsed = BeautifulSoup(body, 'html5lib')
+def parse_text(site_contents, site_name):
+  if site_name == 'http://unkno.com':
+    parsed = BeautifulSoup(site_contents, 'html5lib')
     fact = parsed.find('div', id='content')
-    return fact.text.strip()
+  else:
+    pass
+  return fact.text.strip()
 
-def get_fact():
-    response = requests.get('http://unkno.com')
-    return parse_fact(response.text)
+def get_text(text):
+  site_name = {
+    'fact': 'http://unkno.com',
+    'news': 'http://cnn.com',
+  }.get(text)
+  response = requests.get(site_name)
+  return parse_text(response.text, site_name)
+
 
 def process(path):
     args = path.strip("/").split("/")
-
-    fact = get_fact()
-
-    meme = meme_it(fact)
-
+    #check to make sure that only 1 text and 1 image item are requested
+    source_text, image = args[0], args[1]
+    text = get_text(source_text)
+    meme = meme_it(image, text)
     return meme
 
 def application(environ, start_response):
@@ -137,7 +147,6 @@ def application(environ, start_response):
         path = environ.get('PATH_INFO', None)
         if path is None:
             raise NameError
-
         body = process(path)
         status = "200 OK"
     except NameError:
