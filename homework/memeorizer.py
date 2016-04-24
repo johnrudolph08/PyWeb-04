@@ -100,48 +100,61 @@ To submit your homework:
 
 from bs4 import BeautifulSoup
 import requests
+import random
 
 def meme_it(image, text):
-  if image == 'buzz':
-    url = 'http://cdn.meme.am/Instance/Preview'
-    params = {
-        'imageID': 2097248,
-        'text1': text,
-    }
-    response = requests.get(url, params)
-  elif image == 'aliens':
-    pass
-  else:
-    pass
+  """Fetches image, overlays text and returns meme"""
+  url = 'http://cdn.meme.am/Instance/Preview'
+  #dictionary to hold required url parameters to retreive buzz/aliens image
+  params = {
+    'buzz': {'imageID':2097248, 'text1':text},
+    'aliens':{'imageID':"627067", 'text1':text}
+  }.get(image)
+  response = requests.get(url, params)
   return response.content
 
+def parse_unkno(site_contents):
+  """Pulls the random fact displayed from unkno.com"""
+  parsed = BeautifulSoup(site_contents, 'html5lib')
+  fact = parsed.find('div', id='content')
+  return fact.text.strip()
 
-def parse_text(site_contents, site_name):
-  if site_name == 'http://unkno.com':
-    parsed = BeautifulSoup(site_contents, 'html5lib')
-    fact = parsed.find('div', id='content')
-  else:
-    pass
+def parse_cnn(site_contents):
+  """Pulls a random title from CNN rss top headlines page"""
+  parsed = parsed = BeautifulSoup(site_contents, 'html5lib')
+  #create a list of all titles in item tags
+  fact_list = [item.find('title') for item in parsed.findAll('item')]
+  #pick a random title
+  fact = random.choice(fact_list)
   return fact.text.strip()
 
 def get_text(text):
+  """Determine if fact/news is requested and return related content"""
   site_name = {
     'fact': 'http://unkno.com',
-    'news': 'http://cnn.com',
+    'news': 'http://rss.cnn.com/rss/cnn_topstories.rss',
   }.get(text)
   response = requests.get(site_name)
-  return parse_text(response.text, site_name)
-
+  #call parse function based on site name requested
+  parse = {
+    'http://unkno.com': parse_unkno,
+    'http://rss.cnn.com/rss/cnn_topstories.rss': parse_cnn,
+  }.get(site_name)  
+  return parse(response.text)
 
 def process(path):
+    """Get type of text and type of image from url path and return meme"""
     args = path.strip("/").split("/")
-    #check to make sure that only 1 text and 1 image item are requested
-    source_text, image = args[0], args[1]
-    text = get_text(source_text)
+    #first item is source of text second item is image
+    text_source, image = args[0], args[1]
+    #retreive text used for meme
+    text = get_text(text_source)
+    #overlay text ontop of image
     meme = meme_it(image, text)
     return meme
 
 def application(environ, start_response):
+    """Boilerplate HTTP response"""
     headers = [('Content-type', 'image/jpeg')]
     try:
         path = environ.get('PATH_INFO', None)
