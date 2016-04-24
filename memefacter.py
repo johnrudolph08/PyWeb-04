@@ -5,30 +5,42 @@ to memes using https://imgflip.com/memegenerator
 This base code is a copy of our initial pseudo calculator code; we will
 modify it to our purpose.
 """
+from bs4 import BeautifulSoup
+import requests
 
-def resolve_path(path):
-    """
-    Should return two values: a callable and an iterable of
-    arguments, based on the path.
-    """
+def meme_it(fact):
+    url = 'http://cdn.meme.am/Instance/Preview'
+    params ={
+        'imageID':2097248,
+        'text1': fact
+    }
+    response = requests.get(url, params)
 
-    # TODO: Provide correct values for func and args. The
-    # examples provide the correct *syntax*, but you should
-    # determine the actual values of func and args using the
-    # path.
-    func = some_func
-    args = ['25', '32']
+    return response.content
 
-    return func, args
+def parse_fact(body):
+    parsed = BeautifulSoup(body, 'html5lib')
+    fact = parsed.find('div', id='content')
+    return fact.text.strip()
+
+def get_fact():
+    response = requests.get('http://unkno.com')
+    return parse_fact(response.text)
+
+def process():
+    fact = get_fact()
+
+    meme = meme_it(fact)
+
+    return meme
 
 def application(environ, start_response):
-    headers = [('Content-type', 'text/html')]
+    headers = [('Content-type', 'image/jpg')]
     try:
         path = environ.get('PATH_INFO', None)
         if path is None:
             raise NameError
-        func, args = resolve_path(path)
-        body = func(*args)
+        body = process()
         status = "200 OK"
     except NameError:
         status = "404 Not Found"
@@ -39,7 +51,7 @@ def application(environ, start_response):
     finally:
         headers.append(('Content-length', str(len(body))))
         start_response(status, headers)
-        return [body.encode('utf8')]
+        return [body]
 
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server
