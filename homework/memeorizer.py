@@ -130,17 +130,14 @@ def parse_cnn(site_contents):
 
 def get_text(text):
   """Determine if fact/news is requested and return related content"""
-  site_name = {
-    'fact': 'http://unkno.com',
-    'news': 'http://rss.cnn.com/rss/cnn_topstories.rss',
+  print(text)
+  site_name, parse = {
+    'fact': ['http://unkno.com', parse_unkno],
+    'news': ['http://rss.cnn.com/rss/cnn_topstories.rss', parse_cnn],
   }.get(text)
-  response = requests.get(site_name)
-  #call parse function based on site name requested
-  parse = {
-    'http://unkno.com': parse_unkno,
-    'http://rss.cnn.com/rss/cnn_topstories.rss': parse_cnn,
-  }.get(site_name)  
-  return parse(response.text)
+
+  print(site_name, parse)
+  return parse(requests.get(site_name).text)
 
 def process(path):
     """Get type of text and type of image from url path and return meme"""
