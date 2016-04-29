@@ -121,7 +121,7 @@ def parse_unkno(site_contents):
 
 def parse_cnn(site_contents):
   """Pulls a random title from CNN rss top headlines page"""
-  parsed = parsed = BeautifulSoup(site_contents, 'html5lib')
+  parsed = BeautifulSoup(site_contents, 'html5lib')
   #create a list of all titles in item tags
   fact_list = [item.find('title') for item in parsed.findAll('item')]
   #pick a random title
